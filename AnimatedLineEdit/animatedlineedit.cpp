@@ -5,6 +5,7 @@
 #include <QToolButton>
 #include <QLabel>
 #include <QPainter>
+#include <QDebug>
 
 #define MARGINS 5
 
@@ -50,8 +51,9 @@ void AnimatedLineEdit::focusInEvent(QFocusEvent *e){
         animation->setDuration(mAnimationSpeed);
         animation->setStartValue(mPlaceholderLabel->geometry());
         animation->setEndValue(QRect(textLeftMargin, contentsRect().y() - mPlaceholderLabel->sizeHint().height()/2, mPlaceholderLabel->sizeHint().width(), mPlaceholderLabel->sizeHint().height()));
-
         animation->start(QPropertyAnimation::DeleteWhenStopped);
+
+        connect(animation, &QPropertyAnimation::finished, this, QOverload<>::of(&AnimatedLineEdit::update));
 
         QFont f = mPlaceholderLabel->font();
         placeholderTextFontSize.first = f.pointSize();
@@ -80,6 +82,8 @@ void AnimatedLineEdit::focusOutEvent(QFocusEvent *e){
         animation->setStartValue(mPlaceholderLabel->geometry());
         animation->setEndValue(mPlaceHolderRect);
         animation->start(QPropertyAnimation::DeleteWhenStopped);
+
+        connect(animation, &QPropertyAnimation::finished, this, QOverload<>::of(&AnimatedLineEdit::update));
 
         QFont f = mPlaceholderLabel->font();
 
@@ -111,7 +115,8 @@ void AnimatedLineEdit::paintEvent(QPaintEvent *event){
         path.lineTo(contentsRect().right() + mBorderRadius, contentsRect().bottom()); //bottom right
     }
     else{
-        if(hasFocus() && !mPlaceholderLabel->text().isEmpty()){
+        bool isOutsideContentRect = (mPlaceholderLabel->y() <= contentsRect().y());
+        if((hasFocus() && !mPlaceholderLabel->text().isEmpty()) || isOutsideContentRect){
             path.moveTo(mPlaceholderLabel->geometry().right() + mBorderRadius * 2, contentsRect().top()); //top left
         }
         else{
@@ -127,7 +132,7 @@ void AnimatedLineEdit::paintEvent(QPaintEvent *event){
         path.lineTo(contentsRect().left(), contentsRect().top() + mBorderRadius); //top left
         path.arcTo(QRect(contentsRect().left(), contentsRect().top(), mBorderRadius*2, mBorderRadius*2), 180, -90); //top left corner
 
-        if(hasFocus() && !mPlaceholderLabel->text().isEmpty()){
+        if((hasFocus() && !mPlaceholderLabel->text().isEmpty()) || isOutsideContentRect){
             int left = mPlaceholderLabel->geometry().left() - mBorderRadius*2;
             if(left < mBorderRadius)
                 left = mBorderRadius;
