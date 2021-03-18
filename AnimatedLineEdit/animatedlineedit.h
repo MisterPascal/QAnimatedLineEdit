@@ -10,6 +10,11 @@ class AnimatedLineEdit : public QLineEdit
     Q_OBJECT
 
 public:
+    enum Style{
+        Boxed,
+        Underlined
+    };
+
     explicit AnimatedLineEdit(QWidget *parent = nullptr);
 
     virtual void setPlaceholderText(const QString &);
@@ -23,6 +28,7 @@ public:
     void setAnimationSpeed(int animationSpeed);
     void setBorderColorFocus(const QColor &borderColorFocus);
     void setBorderColorNoFocus(const QColor &borderColorNoFocus);
+    void setStyle(const AnimatedLineEdit::Style &style);
 
 protected:
     void resizeEvent(QResizeEvent *);
@@ -30,7 +36,8 @@ protected:
     void focusOutEvent(QFocusEvent *e);
     void paintEvent(QPaintEvent*);
 
-private:    
+private:
+    AnimatedLineEdit::Style mStyle = Style::Boxed;
     QLabel *mPlaceholderLabel; //label which replaces the placeholder and moves to the top when focus in
     QRect mPlaceHolderRect; //position of the placeholderLabel
 

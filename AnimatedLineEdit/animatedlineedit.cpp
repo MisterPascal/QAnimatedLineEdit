@@ -105,30 +105,41 @@ void AnimatedLineEdit::paintEvent(QPaintEvent *event){
         p.setPen(QPen(QBrush(mBorderColorNoFocus), 1));
 
     QPainterPath path;
-    if(hasFocus() && !mPlaceholderLabel->text().isEmpty()){
-        path.moveTo(mPlaceholderLabel->geometry().right() + mBorderRadius * 2, contentsRect().top()); //top left
+
+    if(mStyle == Style::Underlined){
+        path.moveTo(contentsRect().left() + mBorderRadius, contentsRect().bottom()); //bottom left
+        path.lineTo(contentsRect().right() + mBorderRadius, contentsRect().bottom()); //bottom right
     }
     else{
-        path.moveTo(contentsRect().left() + mBorderRadius, contentsRect().top()); //top left
-    }
+        if(hasFocus() && !mPlaceholderLabel->text().isEmpty()){
+            path.moveTo(mPlaceholderLabel->geometry().right() + mBorderRadius * 2, contentsRect().top()); //top left
+        }
+        else{
+            path.moveTo(contentsRect().left() + mBorderRadius, contentsRect().top()); //top left
+        }
 
-    path.lineTo(contentsRect().right() - mBorderRadius, contentsRect().top()); //top right
-    path.arcTo(QRect(contentsRect().right() - mBorderRadius*2, contentsRect().top(), mBorderRadius*2, mBorderRadius*2), 90, -90); //top right corner
-    path.lineTo(contentsRect().right(), contentsRect().bottom() - mBorderRadius); //bottom right
-    path.arcTo(QRect(contentsRect().right() - mBorderRadius*2, contentsRect().bottom() - mBorderRadius*2, mBorderRadius*2, mBorderRadius*2), 0, -90); //bottom right corner
-    path.lineTo(contentsRect().left() + mBorderRadius, contentsRect().bottom()); //bottom left
-    path.arcTo(QRect(contentsRect().left(), contentsRect().bottom() - mBorderRadius*2, mBorderRadius*2, mBorderRadius*2), -90, -90); //bottom left corner
-    path.lineTo(contentsRect().left(), contentsRect().top() + mBorderRadius); //top left
-    path.arcTo(QRect(contentsRect().left(), contentsRect().top(), mBorderRadius*2, mBorderRadius*2), 180, -90); //top left corner
+        path.lineTo(contentsRect().right() - mBorderRadius, contentsRect().top()); //top right
+        path.arcTo(QRect(contentsRect().right() - mBorderRadius*2, contentsRect().top(), mBorderRadius*2, mBorderRadius*2), 90, -90); //top right corner
+        path.lineTo(contentsRect().right(), contentsRect().bottom() - mBorderRadius); //bottom right
+        path.arcTo(QRect(contentsRect().right() - mBorderRadius*2, contentsRect().bottom() - mBorderRadius*2, mBorderRadius*2, mBorderRadius*2), 0, -90); //bottom right corner
+        path.lineTo(contentsRect().left() + mBorderRadius, contentsRect().bottom()); //bottom left
+        path.arcTo(QRect(contentsRect().left(), contentsRect().bottom() - mBorderRadius*2, mBorderRadius*2, mBorderRadius*2), -90, -90); //bottom left corner
+        path.lineTo(contentsRect().left(), contentsRect().top() + mBorderRadius); //top left
+        path.arcTo(QRect(contentsRect().left(), contentsRect().top(), mBorderRadius*2, mBorderRadius*2), 180, -90); //top left corner
 
-    if(hasFocus() && !mPlaceholderLabel->text().isEmpty()){
-        int left = mPlaceholderLabel->geometry().left() - mBorderRadius*2;
-        if(left < mBorderRadius)
-            left = mBorderRadius;
-        path.lineTo(left, contentsRect().top()); //to the label
+        if(hasFocus() && !mPlaceholderLabel->text().isEmpty()){
+            int left = mPlaceholderLabel->geometry().left() - mBorderRadius*2;
+            if(left < mBorderRadius)
+                left = mBorderRadius;
+            path.lineTo(left, contentsRect().top()); //to the label
+        }
     }
 
     p.drawPath(path);
+}
+
+void AnimatedLineEdit::setStyle(const AnimatedLineEdit::Style &style){
+    mStyle = style;
 }
 
 void AnimatedLineEdit::setBorderColorFocus(const QColor &borderColorFocus){
