@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QPainter>
 #include <QDebug>
+#include <QFlags>
 
 #define MARGINS 5
 
@@ -17,22 +18,29 @@ AnimatedLineEdit::AnimatedLineEdit(QWidget *parent) :
     mPlaceholderLabel->setAlignment(Qt::AlignCenter);
     setStyleSheet(QStringLiteral("QLineEdit{ border-radius: ") + QString::number(mBorderRadius) + QStringLiteral("; background-color: transparent; }"));
     setFrame(false);
+    setFont(font()); //reaply same font to store current values
 }
 
 void AnimatedLineEdit::resizeEvent(QResizeEvent *){
 
     updateTextMargins();
 
-    //set margin to have some space at the top
+    //set top-margin to have some space at the top
     setContentsMargins(1, mPlaceholderLabel->sizeHint().height() / 2, 1, 1);
-
-    if(leadingButtons.isEmpty())
-        setTextMargins(mPlaceholderLabel->sizeHint().height() / 2, MARGINS, MARGINS, MARGINS);
 
     setMinimumHeight(mPlaceholderLabel->sizeHint().height()*2 + MARGINS * 2);
 
-    mPlaceHolderRect = QRect(textLeftMargin, contentsRect().center().y() - mPlaceholderLabel->sizeHint().height()/2, mPlaceholderLabel->sizeHint().width(), mPlaceholderLabel->sizeHint().height());
-    mPlaceholderLabel->setGeometry(mPlaceHolderRect);
+    if(alignment().testFlag(Qt::AlignCenter) || alignment().testFlag(Qt::AlignHCenter)){
+        mPlaceHolderRectCenter = QRect(contentsRect().center().x() - mPlaceholderLabel->sizeHint().width()/2, contentsRect().center().y() - mPlaceholderLabel->sizeHint().height()/2, mPlaceholderLabel->sizeHint().width(), mPlaceholderLabel->sizeHint().height());
+        mPlaceHolderRectTop = QRect(contentsRect().center().x() - mPlaceholderLabel->sizeHint().width()/2, contentsRect().y() - mPlaceholderLabel->sizeHint().height()/2, mPlaceholderLabel->sizeHint().width(), mPlaceholderLabel->sizeHint().height());
+    }
+    else{
+        mPlaceHolderRectCenter = QRect(textLeftMargin, contentsRect().center().y() - mPlaceholderLabel->sizeHint().height()/2, mPlaceholderLabel->sizeHint().width(), mPlaceholderLabel->sizeHint().height());
+        mPlaceHolderRectTop = QRect(textLeftMargin, contentsRect().y() - mPlaceholderLabel->sizeHint().height()/2, mPlaceholderLabel->sizeHint().width(), mPlaceholderLabel->sizeHint().height());
+    }
+
+    mPlaceholderLabel->setGeometry(text().isEmpty() ? mPlaceHolderRectCenter : mPlaceHolderRectTop);
+    updatePlaceHolderLabelFontSize(!text().isEmpty());
 
     for (int i = 0; i < leadingButtons.count(); ++i) {
         leadingButtons.at(i)->setGeometry(MARGINS + mButtonSize * i+1 /*icon spaces*/, contentsRect().center().y() - mButtonSize/2, mButtonSize, mButtonSize);
@@ -50,25 +58,12 @@ void AnimatedLineEdit::focusInEvent(QFocusEvent *e){
         animation->setEasingCurve(QEasingCurve::OutCubic);
         animation->setDuration(mAnimationSpeed);
         animation->setStartValue(mPlaceholderLabel->geometry());
-        animation->setEndValue(QRect(textLeftMargin, contentsRect().y() - mPlaceholderLabel->sizeHint().height()/2, mPlaceholderLabel->sizeHint().width(), mPlaceholderLabel->sizeHint().height()));
+        animation->setEndValue(mPlaceHolderRectTop);
         animation->start(QPropertyAnimation::DeleteWhenStopped);
 
         connect(animation, &QPropertyAnimation::finished, this, QOverload<>::of(&AnimatedLineEdit::update));
 
-        QFont f = mPlaceholderLabel->font();
-        placeholderTextFontSize.first = f.pointSize();
-
-        if(placeholderTextFontSize.first < 0){ //point size is not working on all sysmtems, eg. Android delivers wrong values sometimes
-            placeholderTextFontSize.first = f.pixelSize();
-            placeholderTextFontSize.second = true;
-        }
-
-        if(placeholderTextFontSize.second)
-            f.setPixelSize((int)placeholderTextFontSize.first*0.9);
-        else
-            f.setPointSizeF((int)placeholderTextFontSize.first*0.9);
-
-        mPlaceholderLabel->setFont(f);
+        updatePlaceHolderLabelFontSize(true);
     }
 
     QLineEdit::focusInEvent(e);
@@ -80,19 +75,12 @@ void AnimatedLineEdit::focusOutEvent(QFocusEvent *e){
         animation->setEasingCurve(QEasingCurve::InCubic);
         animation->setDuration(mAnimationSpeed);
         animation->setStartValue(mPlaceholderLabel->geometry());
-        animation->setEndValue(mPlaceHolderRect);
+        animation->setEndValue(mPlaceHolderRectCenter);
         animation->start(QPropertyAnimation::DeleteWhenStopped);
 
         connect(animation, &QPropertyAnimation::finished, this, QOverload<>::of(&AnimatedLineEdit::update));
 
-        QFont f = mPlaceholderLabel->font();
-
-        if(placeholderTextFontSize.second)
-            f.setPixelSize((int)placeholderTextFontSize.first);
-        else
-            f.setPointSizeF((int)placeholderTextFontSize.first);
-
-        mPlaceholderLabel->setFont(f);
+        updatePlaceHolderLabelFontSize(false);
     }
     QLineEdit::focusOutEvent(e);
 }
@@ -116,7 +104,7 @@ void AnimatedLineEdit::paintEvent(QPaintEvent *event){
     }
     else{
         bool isOutsideContentRect = (mPlaceholderLabel->y() <= contentsRect().y());
-        if((hasFocus() && !mPlaceholderLabel->text().isEmpty()) || isOutsideContentRect){
+        if((hasFocus() || isOutsideContentRect) && !mPlaceholderLabel->text().isEmpty()){
             path.moveTo(mPlaceholderLabel->geometry().right() + mBorderRadius * 2, contentsRect().top()); //top left
         }
         else{
@@ -132,7 +120,7 @@ void AnimatedLineEdit::paintEvent(QPaintEvent *event){
         path.lineTo(contentsRect().left(), contentsRect().top() + mBorderRadius); //top left
         path.arcTo(QRect(contentsRect().left(), contentsRect().top(), mBorderRadius*2, mBorderRadius*2), 180, -90); //top left corner
 
-        if((hasFocus() && !mPlaceholderLabel->text().isEmpty()) || isOutsideContentRect){
+        if((hasFocus() || isOutsideContentRect) && !mPlaceholderLabel->text().isEmpty()){
             int left = mPlaceholderLabel->geometry().left() - mBorderRadius*2;
             if(left < mBorderRadius)
                 left = mBorderRadius;
@@ -142,6 +130,31 @@ void AnimatedLineEdit::paintEvent(QPaintEvent *event){
 
     p.drawPath(path);
 }
+
+
+void AnimatedLineEdit::updatePlaceHolderLabelFontSize(bool placeholderAtTop){
+    if(placeholderAtTop){
+        QFont f = mPlaceholderLabel->font();
+
+        if(placeholderTextFontSize.second)
+            f.setPixelSize((int)placeholderTextFontSize.first*0.9);
+        else
+            f.setPointSizeF((int)placeholderTextFontSize.first*0.9);
+
+        mPlaceholderLabel->setFont(f);
+    }
+    else{
+        QFont f = mPlaceholderLabel->font();
+
+        if(placeholderTextFontSize.second)
+            f.setPixelSize((int)placeholderTextFontSize.first);
+        else
+            f.setPointSizeF((int)placeholderTextFontSize.first);
+
+        mPlaceholderLabel->setFont(f);
+    }
+}
+
 
 void AnimatedLineEdit::setStyle(const AnimatedLineEdit::Style &style){
     mStyle = style;
@@ -177,6 +190,14 @@ void AnimatedLineEdit::setPlaceholderText(const QString &placeholderTextOverride
 
 void AnimatedLineEdit::setFont(const QFont & f){
     mPlaceholderLabel->setFont(f);
+
+    placeholderTextFontSize.first = f.pointSize();
+
+    if(placeholderTextFontSize.first < 0){ //point size is not working on all sysmtems, eg. Android delivers wrong values sometimes
+        placeholderTextFontSize.first = f.pixelSize();
+        placeholderTextFontSize.second = true; //set second to true if we use a pixelSize instead of a pointSize
+    }
+
     QLineEdit::setFont(f);
 }
 

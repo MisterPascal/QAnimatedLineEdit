@@ -20,6 +20,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->verticalLayout_boxedEdits->addWidget(lineEdit_normal);
 
     lineEdit_normal->setPlaceholderText("Lorem ipsum");
+    lineEdit_normal->setAlignment(Qt::AlignHCenter);
 
     QLineEdit *lineEdit_normal_action = new QLineEdit(this);
     ui->verticalLayout_boxedEdits->addWidget(lineEdit_normal_action);
@@ -33,6 +34,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->verticalLayout_boxedEdits->addWidget(lineEdit_animated);
 
     lineEdit_animated->setPlaceholderText("Lorem ipsum");
+    lineEdit_animated->setText("testtext");
+    lineEdit_animated->setAlignment(Qt::AlignHCenter);
 
     AnimatedLineEdit *lineEdit_animated_trailing = new AnimatedLineEdit(this);
     ui->verticalLayout_boxedEdits->addWidget(lineEdit_animated_trailing);

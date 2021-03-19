@@ -39,7 +39,8 @@ protected:
 private:
     AnimatedLineEdit::Style mStyle = Style::Boxed;
     QLabel *mPlaceholderLabel; //label which replaces the placeholder and moves to the top when focus in
-    QRect mPlaceHolderRect; //position of the placeholderLabel
+    QRect mPlaceHolderRectTop; //position of the placeholderLabel if at the top
+    QRect mPlaceHolderRectCenter; //position of the placeholderLabel if at the center
 
     QColor mBorderColorFocus = QColor("#F26026");
     QColor mBorderColorNoFocus = QColor("gray");
@@ -58,6 +59,7 @@ private:
     QList<QToolButton*> trailingButtons;
 
     void updateTextMargins();
+    void updatePlaceHolderLabelFontSize(bool placeholderAtTop);
 };
 
 #endif // ANIMATEDLINEEDIT_H
