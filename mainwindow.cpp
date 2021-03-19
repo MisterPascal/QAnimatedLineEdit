@@ -43,6 +43,10 @@ MainWindow::MainWindow(QWidget *parent)
     lineEdit_animated_trailing->addActionButton(QIcon(QStringLiteral(":/icons/search.svg")), QString(), QLineEdit::TrailingPosition);
     lineEdit_animated_trailing->setPlaceholderText("Lorem ipsum");
 
+    connect(ui->pushButton, &QPushButton::clicked, this, [=]{
+        lineEdit_animated_trailing->setText("TextText");
+    });
+
     AnimatedLineEdit *lineEdit_animated_leading = new AnimatedLineEdit(this);
     ui->verticalLayout_boxedEdits->addWidget(lineEdit_animated_leading);
 
@@ -121,4 +125,3 @@ MainWindow::~MainWindow()
 {
     delete ui;
 }
-

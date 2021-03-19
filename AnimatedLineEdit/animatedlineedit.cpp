@@ -5,8 +5,7 @@
 #include <QToolButton>
 #include <QLabel>
 #include <QPainter>
-#include <QDebug>
-#include <QFlags>
+#include <QResizeEvent>
 
 #define MARGINS 5
 
@@ -19,10 +18,14 @@ AnimatedLineEdit::AnimatedLineEdit(QWidget *parent) :
     setStyleSheet(QStringLiteral("QLineEdit{ border-radius: ") + QString::number(mBorderRadius) + QStringLiteral("; background-color: transparent; }"));
     setFrame(false);
     setFont(font()); //reaply same font to store current values
+    connect(this, &AnimatedLineEdit::textChanged, this, [=]{ //ensure the placeholder is set correctly if the content changes
+        if(mPlaceholderLabel->y() > contentsRect().y()){ //check if placeholderLabel is still in the center
+            resizeEvent(new QResizeEvent(size(), size())); //reuse the resizeEvent
+        }
+    });
 }
 
 void AnimatedLineEdit::resizeEvent(QResizeEvent *){
-
     updateTextMargins();
 
     //set top-margin to have some space at the top
