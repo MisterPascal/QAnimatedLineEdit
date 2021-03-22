@@ -19,6 +19,7 @@ public:
 
     virtual void setPlaceholderText(const QString &);
     virtual void setFont(const QFont &);
+    virtual void setClearButtonEnabled(bool);
 
     //we cant use the addAction function cause the actions wouldnt be centered cause of the contentMargin
     QToolButton *addActionButton(const QIcon &icon, const QString &text = QString(), ActionPosition pos = LeadingPosition);
@@ -30,11 +31,21 @@ public:
     void setBorderColorNoFocus(const QColor &borderColorNoFocus);
     void setStyle(const AnimatedLineEdit::Style &style);
 
+public slots:
+    void setText(const QString &);
+
 protected:
     void resizeEvent(QResizeEvent *);
     void focusInEvent(QFocusEvent *e);
     void focusOutEvent(QFocusEvent *e);
     void paintEvent(QPaintEvent*);
+
+private slots:
+    void updateAfterTextChange();
+    void updateButtonsPosition();
+    void updatePlaceHolderRects();
+    void updatePlaceHolderLabelFontSize(bool placeholderAtTop);
+    void updateTextMargins();
 
 private:
     AnimatedLineEdit::Style mStyle = Style::Boxed;
@@ -58,8 +69,7 @@ private:
     QList<QToolButton*> leadingButtons;
     QList<QToolButton*> trailingButtons;
 
-    void updateTextMargins();
-    void updatePlaceHolderLabelFontSize(bool placeholderAtTop);
+    QToolButton *mClearButton;
 };
 
 #endif // ANIMATEDLINEEDIT_H

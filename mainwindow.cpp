@@ -32,6 +32,7 @@ MainWindow::MainWindow(QWidget *parent)
     //add some example lineEdits
     AnimatedLineEdit *lineEdit_animated = new AnimatedLineEdit(this);
     ui->verticalLayout_boxedEdits->addWidget(lineEdit_animated);
+    lineEdit_animated->setEnabled(false);
 
     lineEdit_animated->setPlaceholderText("Lorem ipsum");
     lineEdit_animated->setText("testtext");

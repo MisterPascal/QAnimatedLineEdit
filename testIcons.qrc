@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>icons/search.svg</file>
+        <file>icons/backspace.svg</file>
     </qresource>
 </RCC>

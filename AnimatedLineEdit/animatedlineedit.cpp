@@ -15,48 +15,39 @@ AnimatedLineEdit::AnimatedLineEdit(QWidget *parent) :
 
     mPlaceholderLabel->setStyleSheet(QStringLiteral("QLabel{ color: gray; }"));
     mPlaceholderLabel->setAlignment(Qt::AlignCenter);
-    setStyleSheet(QStringLiteral("QLineEdit{ border-radius: ") + QString::number(mBorderRadius) + QStringLiteral("; background-color: transparent; }"));
+    setStyleSheet(QStringLiteral("QLineEdit{ border-radius: ") + QString::number(mBorderRadius) + QStringLiteral("; background-color: transparent; } QLineEdit::disabled{ color: gray; background-color: rgba(100, 100, 100, 100); }"));
     setFrame(false);
     setFont(font()); //reaply same font to store current values
-    connect(this, &AnimatedLineEdit::textChanged, this, [=]{ //ensure the placeholder is set correctly if the content changes
-        if(mPlaceholderLabel->y() > contentsRect().y()){ //check if placeholderLabel is still in the center
-            resizeEvent(new QResizeEvent(size(), size())); //reuse the resizeEvent
-        }
-    });
+
+    mClearButton = addActionButton(QIcon(QStringLiteral(":/icons/backspace.svg")), QString(), QLineEdit::TrailingPosition);
+    mClearButton->setVisible(false);
+    connect(mClearButton, &QToolButton::clicked, this, &AnimatedLineEdit::clear);
+    setClearButtonEnabled(true);
+
+    connect(this, &AnimatedLineEdit::textChanged, this, &AnimatedLineEdit::updateAfterTextChange);
 }
 
 void AnimatedLineEdit::resizeEvent(QResizeEvent *){
+
     updateTextMargins();
 
     //set top-margin to have some space at the top
-    setContentsMargins(1, mPlaceholderLabel->sizeHint().height() / 2, 1, 1);
+    setContentsMargins(1, mPlaceholderLabel->sizeHint().height() / 2, 1, mPlaceholderLabel->sizeHint().height() / 2);
 
-    setMinimumHeight(mPlaceholderLabel->sizeHint().height()*2 + MARGINS * 2);
+    setMinimumHeight(mPlaceholderLabel->sizeHint().height()*2 + textMargins().top() + textMargins().bottom());
 
-    if(alignment().testFlag(Qt::AlignCenter) || alignment().testFlag(Qt::AlignHCenter)){
-        mPlaceHolderRectCenter = QRect(contentsRect().center().x() - mPlaceholderLabel->sizeHint().width()/2, contentsRect().center().y() - mPlaceholderLabel->sizeHint().height()/2, mPlaceholderLabel->sizeHint().width(), mPlaceholderLabel->sizeHint().height());
-        mPlaceHolderRectTop = QRect(contentsRect().center().x() - mPlaceholderLabel->sizeHint().width()/2, contentsRect().y() - mPlaceholderLabel->sizeHint().height()/2, mPlaceholderLabel->sizeHint().width(), mPlaceholderLabel->sizeHint().height());
-    }
-    else{
-        mPlaceHolderRectCenter = QRect(textLeftMargin, contentsRect().center().y() - mPlaceholderLabel->sizeHint().height()/2, mPlaceholderLabel->sizeHint().width(), mPlaceholderLabel->sizeHint().height());
-        mPlaceHolderRectTop = QRect(textLeftMargin, contentsRect().y() - mPlaceholderLabel->sizeHint().height()/2, mPlaceholderLabel->sizeHint().width(), mPlaceholderLabel->sizeHint().height());
-    }
+    updatePlaceHolderLabelFontSize(!text().isEmpty() || hasFocus());
 
-    mPlaceholderLabel->setGeometry(text().isEmpty() ? mPlaceHolderRectCenter : mPlaceHolderRectTop);
-    updatePlaceHolderLabelFontSize(!text().isEmpty());
+    updatePlaceHolderRects();
 
-    for (int i = 0; i < leadingButtons.count(); ++i) {
-        leadingButtons.at(i)->setGeometry(MARGINS + mButtonSize * i+1 /*icon spaces*/, contentsRect().center().y() - mButtonSize/2, mButtonSize, mButtonSize);
-    }
+    mPlaceholderLabel->setGeometry((text().isEmpty() && !hasFocus()) ? mPlaceHolderRectCenter : mPlaceHolderRectTop);
 
-    for (int i = 0; i < trailingButtons.count(); ++i) {
-        trailingButtons.at(i)->setGeometry(contentsRect().right() - MARGINS*2 /*some right space*/ - mButtonSize * (i+1) /*icon spaces*/, contentsRect().center().y() - mButtonSize/2, mButtonSize, mButtonSize);
-    }
-
+    updateButtonsPosition();
 }
 
 void AnimatedLineEdit::focusInEvent(QFocusEvent *e){
     if(text().isEmpty()){
+        updatePlaceHolderRects();
         QPropertyAnimation *animation = new QPropertyAnimation(mPlaceholderLabel, "geometry", this);
         animation->setEasingCurve(QEasingCurve::OutCubic);
         animation->setDuration(mAnimationSpeed);
@@ -65,7 +56,6 @@ void AnimatedLineEdit::focusInEvent(QFocusEvent *e){
         animation->start(QPropertyAnimation::DeleteWhenStopped);
 
         connect(animation, &QPropertyAnimation::finished, this, QOverload<>::of(&AnimatedLineEdit::update));
-
         updatePlaceHolderLabelFontSize(true);
     }
 
@@ -82,6 +72,7 @@ void AnimatedLineEdit::focusOutEvent(QFocusEvent *e){
         animation->start(QPropertyAnimation::DeleteWhenStopped);
 
         connect(animation, &QPropertyAnimation::finished, this, QOverload<>::of(&AnimatedLineEdit::update));
+        connect(animation, &QPropertyAnimation::finished, this, &AnimatedLineEdit::updateAfterTextChange); //ensure the label is at the top if you use setText while youre in focus or animation
 
         updatePlaceHolderLabelFontSize(false);
     }
@@ -134,28 +125,46 @@ void AnimatedLineEdit::paintEvent(QPaintEvent *event){
     p.drawPath(path);
 }
 
+void AnimatedLineEdit::setPlaceholderText(const QString &placeholderTextOverride){
+    mPlaceholderLabel->setText(placeholderTextOverride);
+}
 
-void AnimatedLineEdit::updatePlaceHolderLabelFontSize(bool placeholderAtTop){
-    if(placeholderAtTop){
-        QFont f = mPlaceholderLabel->font();
+void AnimatedLineEdit::setFont(const QFont & f){
+    mPlaceholderLabel->setFont(f);
 
-        if(placeholderTextFontSize.second)
-            f.setPixelSize((int)placeholderTextFontSize.first*0.9);
-        else
-            f.setPointSizeF((int)placeholderTextFontSize.first*0.9);
+    placeholderTextFontSize.first = f.pointSize();
 
-        mPlaceholderLabel->setFont(f);
+    if(placeholderTextFontSize.first < 0){ //point size is not working on all sysmtems, eg. Android delivers wrong values sometimes
+        placeholderTextFontSize.first = f.pixelSize();
+        placeholderTextFontSize.second = true; //set second to true if we use a pixelSize instead of a pointSize
     }
-    else{
-        QFont f = mPlaceholderLabel->font();
 
-        if(placeholderTextFontSize.second)
-            f.setPixelSize((int)placeholderTextFontSize.first);
-        else
-            f.setPointSizeF((int)placeholderTextFontSize.first);
+    QLineEdit::setFont(f);
+}
 
-        mPlaceholderLabel->setFont(f);
+void AnimatedLineEdit::setClearButtonEnabled(bool enable){
+    if(isReadOnly() || property("noClearButton").toBool() || !enable){
+        mClearButton->setEnabled(false); //set disabled to use after text change
+        mClearButton->setVisible(false);
+        return;
     }
+    mClearButton->setEnabled(true); //set enabled to use after text change
+}
+
+QToolButton *AnimatedLineEdit::addActionButton(const QIcon &icon, const QString &text, ActionPosition pos){
+    QToolButton *b = new QToolButton(this);
+    b->setIcon(icon);
+    b->setText(text);
+    b->setStyleSheet("QToolButton{background: transparent; border: 1px solid transparent;}"); //without border we got a black button an Android
+    b->setCursor(Qt::ArrowCursor);
+
+    if(pos == LeadingPosition)
+        leadingButtons.append(b);
+    if(pos == TrailingPosition)
+        trailingButtons.append(b);
+
+    updateTextMargins();
+    return b;
 }
 
 
@@ -187,37 +196,73 @@ void AnimatedLineEdit::setBorderRadius(int value){
     update();
 }
 
-void AnimatedLineEdit::setPlaceholderText(const QString &placeholderTextOverride){
-    mPlaceholderLabel->setText(placeholderTextOverride);
+void AnimatedLineEdit::updateAfterTextChange(){
+    if(mPlaceholderLabel->y() > contentsRect().y()){ //check if placeholderLabel is still in the center
+        resizeEvent(new QResizeEvent(size(), size())); //reuse the resizeEvent
+    }
+    mClearButton->setVisible(!text().isEmpty() && mClearButton->isEnabled());
+    updateButtonsPosition();
 }
 
-void AnimatedLineEdit::setFont(const QFont & f){
-    mPlaceholderLabel->setFont(f);
+void AnimatedLineEdit::setText(const QString & t){
+    QLineEdit::setText(t);
+    updateAfterTextChange();
+}
 
-    placeholderTextFontSize.first = f.pointSize();
-
-    if(placeholderTextFontSize.first < 0){ //point size is not working on all sysmtems, eg. Android delivers wrong values sometimes
-        placeholderTextFontSize.first = f.pixelSize();
-        placeholderTextFontSize.second = true; //set second to true if we use a pixelSize instead of a pointSize
+void AnimatedLineEdit::updateButtonsPosition(){
+    int visibleBtnCount = 0; //dont use i cause we need a separate counter to ignore unvisible buttons
+    for (int i = 0; i < leadingButtons.count(); ++i) {
+        if(!leadingButtons.at(i)->isVisible()){ //ignore unvisible btns eg unvisible clearbtn
+            continue;
+        }
+        leadingButtons.at(i)->setGeometry(MARGINS + mButtonSize * visibleBtnCount /*icon spaces*/, contentsRect().center().y() - mButtonSize/2, mButtonSize, mButtonSize);
+        visibleBtnCount++;
     }
 
-    QLineEdit::setFont(f);
+    visibleBtnCount = 1;
+    for (int i = 0; i < trailingButtons.count(); ++i) {
+        if(!trailingButtons.at(i)->isVisible()){ //ignore unvisible btns eg unvisible clearbtn
+            continue;
+        }
+        trailingButtons.at(i)->setGeometry(contentsRect().right() - MARGINS*2 /*some right space*/ - mButtonSize * visibleBtnCount /*icon spaces*/, contentsRect().center().y() - mButtonSize/2, mButtonSize, mButtonSize);
+        visibleBtnCount++;
+    }
 }
 
-QToolButton *AnimatedLineEdit::addActionButton(const QIcon &icon, const QString &text, ActionPosition pos){
-    QToolButton *b = new QToolButton(this);
-    b->setIcon(icon);
-    b->setText(text);
-    b->setStyleSheet("QToolButton{background: transparent; border: 1px solid transparent;}"); //without border we got a black button an Android
-    b->setCursor(Qt::ArrowCursor);
+void AnimatedLineEdit::updatePlaceHolderRects(){
+    if(alignment().testFlag(Qt::AlignCenter) || alignment().testFlag(Qt::AlignHCenter)){
+        mPlaceHolderRectCenter = QRect(contentsRect().center().x() - mPlaceholderLabel->sizeHint().width()/2, contentsRect().center().y() - mPlaceholderLabel->sizeHint().height()/2, mPlaceholderLabel->sizeHint().width(), mPlaceholderLabel->sizeHint().height());
+        mPlaceHolderRectTop = QRect(contentsRect().center().x() - mPlaceholderLabel->sizeHint().width()/2, contentsRect().y() - mPlaceholderLabel->sizeHint().height()/2, mPlaceholderLabel->sizeHint().width(), mPlaceholderLabel->sizeHint().height());
+    }
+    else{
+        mPlaceHolderRectCenter = QRect(textLeftMargin, contentsRect().center().y() - mPlaceholderLabel->sizeHint().height()/2, mPlaceholderLabel->sizeHint().width(), mPlaceholderLabel->sizeHint().height());
+        mPlaceHolderRectTop = QRect(textLeftMargin, contentsRect().y() - mPlaceholderLabel->sizeHint().height()/2, mPlaceholderLabel->sizeHint().width(), mPlaceholderLabel->sizeHint().height());
+    }
+}
 
-    if(pos == LeadingPosition)
-        leadingButtons.append(b);
-    if(pos == TrailingPosition)
-        trailingButtons.append(b);
+void AnimatedLineEdit::updatePlaceHolderLabelFontSize(bool placeholderAtTop){
+    if(placeholderAtTop){
+        QFont f = mPlaceholderLabel->font();
 
-    updateTextMargins();
-    return b;
+        if(placeholderTextFontSize.second)
+            f.setPixelSize((int)placeholderTextFontSize.first*0.9);
+        else
+            f.setPointSizeF((int)placeholderTextFontSize.first*0.9);
+
+        mPlaceholderLabel->setFont(f);
+    }
+    else{
+        QFont f = mPlaceholderLabel->font();
+
+        if(placeholderTextFontSize.second)
+            f.setPixelSize((int)placeholderTextFontSize.first);
+        else
+            f.setPointSizeF((int)placeholderTextFontSize.first);
+
+        mPlaceholderLabel->setFont(f);
+    }
+
+
 }
 
 void AnimatedLineEdit::updateTextMargins(){
