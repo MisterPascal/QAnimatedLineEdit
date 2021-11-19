@@ -4,14 +4,14 @@
 #include <QToolButton>
 #include <QDebug>
 
-#include "AnimatedLineEdit/animatedlineedit.h"
+#include "QAnimatedLineEdit/qanimatedlineedit.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    setWindowTitle("AnimatedLineEdit Examples");
+    setWindowTitle("QAnimatedLineEdit Examples");
 
     //boxed lineEdits
 
@@ -30,7 +30,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     //add some example lineEdits
-    AnimatedLineEdit *lineEdit_animated = new AnimatedLineEdit(this);
+    QAnimatedLineEdit *lineEdit_animated = new QAnimatedLineEdit(this);
     ui->verticalLayout_boxedEdits->addWidget(lineEdit_animated);
     lineEdit_animated->setEnabled(false);
 
@@ -38,7 +38,7 @@ MainWindow::MainWindow(QWidget *parent)
     lineEdit_animated->setText("testtext");
     lineEdit_animated->setAlignment(Qt::AlignHCenter);
 
-    AnimatedLineEdit *lineEdit_animated_trailing = new AnimatedLineEdit(this);
+    QAnimatedLineEdit *lineEdit_animated_trailing = new QAnimatedLineEdit(this);
     ui->verticalLayout_boxedEdits->addWidget(lineEdit_animated_trailing);
 
     lineEdit_animated_trailing->addActionButton(QIcon(QStringLiteral(":/icons/search.svg")), QString(), QLineEdit::TrailingPosition);
@@ -48,7 +48,7 @@ MainWindow::MainWindow(QWidget *parent)
         lineEdit_animated_trailing->setText("TextText");
     });
 
-    AnimatedLineEdit *lineEdit_animated_leading = new AnimatedLineEdit(this);
+    QAnimatedLineEdit *lineEdit_animated_leading = new QAnimatedLineEdit(this);
     ui->verticalLayout_boxedEdits->addWidget(lineEdit_animated_leading);
 
     lineEdit_animated_leading->setPlaceholderText("Lorem ipsum");
@@ -59,7 +59,7 @@ MainWindow::MainWindow(QWidget *parent)
         qDebug() << "search btn";
     });
 
-    AnimatedLineEdit *lineEdit_animated_multipleButtons = new AnimatedLineEdit(this);
+    QAnimatedLineEdit *lineEdit_animated_multipleButtons = new QAnimatedLineEdit(this);
     ui->verticalLayout_boxedEdits->addWidget(lineEdit_animated_multipleButtons);
 
     lineEdit_animated_multipleButtons->setPlaceholderText("Lorem ipsum");
@@ -87,24 +87,24 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     //add some example lineEdits
-    AnimatedLineEdit *lineEdit_animated_underlined = new AnimatedLineEdit(this);
+    QAnimatedLineEdit *lineEdit_animated_underlined = new QAnimatedLineEdit(this);
     ui->verticalLayout_underlinedEdits->addWidget(lineEdit_animated_underlined);
 
     lineEdit_animated_underlined->setPlaceholderText("Lorem ipsum");
-    lineEdit_animated_underlined->setStyle(AnimatedLineEdit::Underlined);
+    lineEdit_animated_underlined->setStyle(QAnimatedLineEdit::Underlined);
 
-    AnimatedLineEdit *lineEdit_animated_trailing_underlined = new AnimatedLineEdit(this);
+    QAnimatedLineEdit *lineEdit_animated_trailing_underlined = new QAnimatedLineEdit(this);
     ui->verticalLayout_underlinedEdits->addWidget(lineEdit_animated_trailing_underlined);
 
     lineEdit_animated_trailing_underlined->addActionButton(QIcon(QStringLiteral(":/icons/search.svg")), QString(), QLineEdit::TrailingPosition);
     lineEdit_animated_trailing_underlined->setPlaceholderText("Lorem ipsum");
-    lineEdit_animated_trailing_underlined->setStyle(AnimatedLineEdit::Underlined);
+    lineEdit_animated_trailing_underlined->setStyle(QAnimatedLineEdit::Underlined);
 
-    AnimatedLineEdit *lineEdit_animated_leading_underlined = new AnimatedLineEdit(this);
+    QAnimatedLineEdit *lineEdit_animated_leading_underlined = new QAnimatedLineEdit(this);
     ui->verticalLayout_underlinedEdits->addWidget(lineEdit_animated_leading_underlined);
 
     lineEdit_animated_leading_underlined->setPlaceholderText("Lorem ipsum");
-    lineEdit_animated_leading_underlined->setStyle(AnimatedLineEdit::Underlined);
+    lineEdit_animated_leading_underlined->setStyle(QAnimatedLineEdit::Underlined);
     lineEdit_animated_leading_underlined->setBorderColorNoFocus("lightgreen");
     lineEdit_animated_leading_underlined->setBorderColorFocus("darkgreen");
     QToolButton *b2 = lineEdit_animated_leading_underlined->addActionButton(QIcon(QStringLiteral(":/icons/search.svg")), QString(), QLineEdit::LeadingPosition);
@@ -112,11 +112,11 @@ MainWindow::MainWindow(QWidget *parent)
         qDebug() << "search btn";
     });
 
-    AnimatedLineEdit *lineEdit_animated_multipleButtons_underlined = new AnimatedLineEdit(this);
+    QAnimatedLineEdit *lineEdit_animated_multipleButtons_underlined = new QAnimatedLineEdit(this);
     ui->verticalLayout_underlinedEdits->addWidget(lineEdit_animated_multipleButtons_underlined);
 
     lineEdit_animated_multipleButtons_underlined->setPlaceholderText("Lorem ipsum");
-    lineEdit_animated_multipleButtons_underlined->setStyle(AnimatedLineEdit::Underlined);
+    lineEdit_animated_multipleButtons_underlined->setStyle(QAnimatedLineEdit::Underlined);
     lineEdit_animated_multipleButtons_underlined->addActionButton(QIcon(QStringLiteral(":/icons/search.svg")), QString(), QLineEdit::LeadingPosition);
     lineEdit_animated_multipleButtons_underlined->addActionButton(QIcon(QStringLiteral(":/icons/search.svg")), QString(), QLineEdit::LeadingPosition);
     lineEdit_animated_multipleButtons_underlined->addActionButton(QIcon(QStringLiteral(":/icons/search.svg")), QString(), QLineEdit::TrailingPosition);

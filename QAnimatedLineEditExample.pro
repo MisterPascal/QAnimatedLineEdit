@@ -18,7 +18,7 @@ HEADERS += \
 FORMS += \
     mainwindow.ui
 
-include($$PWD/AnimatedLineEdit/AnimatedLineEdit.pri)
+include($$PWD/QAnimatedLineEdit/QAnimatedLineEdit.pri)
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
