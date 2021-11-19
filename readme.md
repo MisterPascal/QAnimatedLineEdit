@@ -1,4 +1,4 @@
-# AnimatedLineEdit
+# QAnimatedLineEdit
 
 This is an extended version of the QLineEdit to enable a animation of the placeholder text.
 
@@ -15,10 +15,10 @@ These are the main functions:
 
 ### Usage
 
-Copy the `AnimatedLineEdit` subdirectory into your project folder and add this to your qmake project file:
+Copy the `QAnimatedLineEdit` subdirectory into your project folder and add this to your qmake project file:
 
 ```cmake
-include(AnimatedLineEdit/AnimatedLineEdit.pri)
+include(QAnimatedLineEdit/QAnimatedLineEdit.pri)
 ```
 
 ### Example
